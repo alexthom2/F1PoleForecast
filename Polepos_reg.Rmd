@@ -1,0 +1,1467 @@
+---
+title: "F1 Pole Position"
+author: "Alex Thom"
+date: "25/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+
+library(tidyverse)
+library(tidymodels)
+library(glue)
+library(rvest)
+library(readxl)
+
+```
+
+```{r}
+
+
+
+######################## fucntion ###############################################
+
+prac1_scrape <- function(year, raceno, race) {
+  
+  Sys.sleep(1)
+  
+  cat(".")
+  
+  url <- glue("https://www.formula1.com/en/results.html/{year}/races/{raceno}/{race}/practice-1.html")
+  
+  dat2 <-   read_html(url) %>%
+    html_nodes("body > div.site-wrapper > main > article > div > div.ResultArchiveContainer > div.resultsarchive-wrapper > div.resultsarchive-content.group > div.resultsarchive-col-right > table") %>%
+    html_table() %>%
+    flatten_df() 
+  
+  colnames(dat2)[1] <- "col1"
+  colnames(dat2)[9] <- "col2"
+  
+  dat4 <- dat2 %>% separate(Time, c("min", "sec"), ":")
+  
+  dat4$min <- as.numeric(dat4$min)
+  dat4$sec <- as.numeric(dat4$sec)
+  
+  dat5 <- dat4 %>% mutate(time = min * 60 + sec) %>%
+    select(Pos, No, Car, time, Laps)
+  
+  
+  first <- dat5$time[[1]]
+  
+  
+  dat6 <- dat5 %>% mutate(delta = time- first) %>%
+    mutate(gp = race) %>%
+    mutate(race1 = raceno)
+  
+  colnames(dat6)[1] <- "prac1pos"
+  colnames(dat6)[4] <- "pract1t"
+  colnames(dat6)[5] <- "pract1l"
+  colnames(dat6)[6] <- "pract1d"
+  
+  
+  
+  return(dat6)
+  
+}
+
+
+
+prac2_scrape <- function(year, raceno, race) {
+  
+  Sys.sleep(1)
+  
+  cat(".")
+  
+  url <- glue("https://www.formula1.com/en/results.html/{year}/races/{raceno}/{race}/practice-2.html")
+  
+  dat2 <-   read_html(url) %>%
+    html_nodes("body > div.site-wrapper > main > article > div > div.ResultArchiveContainer > div.resultsarchive-wrapper > div.resultsarchive-content.group > div.resultsarchive-col-right > table") %>%
+    html_table() %>%
+    flatten_df() 
+  
+  colnames(dat2)[1] <- "col1"
+  colnames(dat2)[9] <- "col2"
+  
+  dat4 <- dat2 %>% separate(Time, c("min", "sec"), ":")
+  
+  dat4$min <- as.numeric(dat4$min)
+  dat4$sec <- as.numeric(dat4$sec)
+  
+  dat5 <- dat4 %>% mutate(time = min * 60 + sec) %>%
+    select(Pos, No, Car, time, Laps)
+  
+  
+  first <- dat5$time[[1]]
+  
+  
+  dat6 <- dat5 %>% mutate(delta = time- first) %>%
+    mutate(gp = race) %>%
+    mutate(race1 = raceno)
+  
+  colnames(dat6)[1] <- "prac2pos"
+  colnames(dat6)[4] <- "pract2t"
+  colnames(dat6)[5] <- "pract2l"
+  colnames(dat6)[6] <- "pract2d"
+  
+  
+  
+  return(dat6)
+  
+}
+
+prac3_scrape <- function(year, raceno, race) {
+  
+  Sys.sleep(1)
+  
+  cat(".")
+  
+  url <- glue("https://www.formula1.com/en/results.html/{year}/races/{raceno}/{race}/practice-3.html")
+  
+  dat2 <-   read_html(url) %>%
+    html_nodes("body > div.site-wrapper > main > article > div > div.ResultArchiveContainer > div.resultsarchive-wrapper > div.resultsarchive-content.group > div.resultsarchive-col-right > table") %>%
+    html_table() %>%
+    flatten_df() 
+  
+  colnames(dat2)[1] <- "col1"
+  colnames(dat2)[9] <- "col2"
+  
+  dat4 <- dat2 %>% separate(Time, c("min", "sec"), ":")
+  
+  dat4$min <- as.numeric(dat4$min)
+  dat4$sec <- as.numeric(dat4$sec)
+  
+  dat5 <- dat4 %>% mutate(time = min * 60 + sec) %>%
+    select(Pos, No, Car, time, Laps)
+  
+  
+  first <- dat5$time[[1]]
+  
+  
+  dat6 <- dat5 %>% mutate(delta = time- first) %>%
+    mutate(gp = race) %>%
+    mutate(race1 = raceno)
+  
+  colnames(dat6)[1] <- "prac2pos"
+  colnames(dat6)[4] <- "pract2t"
+  colnames(dat6)[5] <- "pract2l"
+  colnames(dat6)[6] <- "pract2d"
+  
+  
+  
+  return(dat6)
+  
+}
+
+
+qual_scrape <- function(year, raceno, race) {
+  
+  Sys.sleep(1)
+  
+  cat(".")
+  
+  url <- glue("https://www.formula1.com/en/results.html/{year}/races/{raceno}/{race}/qualifying.html")
+  
+  dat2 <-   read_html(url) %>%
+    html_nodes("body > div.site-wrapper > main > article > div > div.ResultArchiveContainer > div.resultsarchive-wrapper > div.resultsarchive-content.group > div.resultsarchive-col-right > table") %>%
+    html_table() %>%
+    flatten_df() 
+  
+  colnames(dat2)[1] <- "col1"
+  
+  dat3 <- dat2 %>% select(Pos, No, Car, Q1, Q2, Q3) %>%
+    gather("qual", "time", -c(Pos, No, Car)) %>%
+    separate(time, c("min", "sec"), ":")
+  
+  
+  dat3$min <- as.numeric(dat3$min)
+  dat3$sec <- as.numeric(dat3$sec)
+  
+  
+  dat5 <- dat3 %>% mutate(time = min * 60 + sec) %>%
+    filter(!is.na(time)) %>%
+    group_by(No) %>%
+    filter(time == min(time)) %>%
+    select(No, time) %>%
+    mutate(race1 = raceno) 
+  
+  
+  colnames(dat5)[2] <- "qtime"
+  
+  return(dat5)
+  
+}
+
+
+predprep <- function(x,y,t) {
+  
+  dat1 <- x %>% left_join(y, by= "No") %>%
+    separate(Car.x, c("n1", "n2"), sep = " ") %>%
+    mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                          if_else(n1 == "Red", "Red Bull", 
+                                  if_else(n1 == "Ferrari", "Ferrari", 
+                                          if_else(n1 == "Haas", "Haas", 
+                                                  if_else(n1 == "McLaren", "McLaren",
+                                                          if_else(n1 == "Renault", "Renault", 
+                                                                  if_else(n1 == "Scuderia", "Toro Rosso", 
+                                                                          if_else(n1 == "Williams", "Williams",
+                                                                                  if_else(n1 == "Racing", "Racing Point",
+                                                                                          if_else(n1 == "Alfa", "Alfa Romeo", "NA"))))))))))) %>%
+    select(prac1pos, No, prac2pos,pract1t, pract1l , pract1d, pract2t, pract2l , pract2d , Team) %>%
+    mutate(Length = 4318) %>%
+    filter(!is.na(pract1t)) %>% 
+    filter(!is.na(pract2t)) 
+  
+  
+  dat2 <- trackmat1[trackmat1[, t] == 1,]
+  
+  d3 <- dat2[1:20,]
+  
+  teamm <- dat1 %>% select(Team)
+  
+  teammatm <- model.matrix(~Team-1, teamm)
+  
+  f12 <- dat1 %>% select(-Team, -No)
+  
+  
+  f1all <- cbind(f12, d3)
+  f1all2 <- cbind(f1all, teammatm)
+  
+  f1all3 <- f1all2[1:20,]
+  
+  return(f1all3)
+  
+}
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+##### getitng data ###################################################
+
+prac118 <- bind_rows(prac1_scrape(2018,979, "australia"), prac1_scrape(2018,980, "bahrain"), prac1_scrape(2018,981, "china"), 
+                     prac1_scrape(2018,982, "azerbaijan"), prac1_scrape(2018,983, "spain"), prac1_scrape(2018,984, "monaco"),
+                     prac1_scrape(2018,985, "canada"), prac1_scrape(2018,986, "france"), prac1_scrape(2018,987, "austria"),
+                     prac1_scrape(2018,988, "great_britain"), prac1_scrape(2018,989, "germany"), prac1_scrape(2018,990, "hungary"),
+                     prac1_scrape(2018,991, "belgium"), prac1_scrape(2018,992, "italy"), prac1_scrape(2018,993, "singapore"),
+                     prac1_scrape(2018,994, "russia"), prac1_scrape(2018,995, "japan"), prac1_scrape(2018,996, "united-states"),
+                     prac1_scrape(2018,997, "mexico"), prac1_scrape(2018,998, "brazil"), prac1_scrape(2018,999, "abu-dhabi"))
+
+
+
+
+prac117 <- bind_rows(prac1_scrape(2017, 959, "australia"), prac1_scrape(2017, 960, "china"), prac1_scrape(2017, 961, "bahrain"), 
+                     prac1_scrape(2017, 962, "russia"), prac1_scrape(2017, 963, "spain"), prac1_scrape(2017, 964, "monaco"),
+                     prac1_scrape(2017, 965, "canada"), prac1_scrape(2017, 966, "azerbaijan"), prac1_scrape(2017,967, "austria"),
+                     prac1_scrape(2017,968, "great_britain"), prac1_scrape(2017,969, "hungary"), prac1_scrape(2017,970, "belgium"),
+                     prac1_scrape(2017,971, "italy"), prac1_scrape(2017,972, "singapore"), prac1_scrape(2017,973, "malaysia"),
+                     prac1_scrape(2017,974, "japan"), prac1_scrape(2017,975, "united-states"), prac1_scrape(2017,976, "mexico"),
+                     prac1_scrape(2017,977, "brazil"), prac1_scrape(2017,978, "abu-dhabi"))
+
+
+prac116 <- bind_rows(prac1_scrape(2016, 938, "australia"), prac1_scrape(2016, 939, "bahrain"), prac1_scrape(2016, 940, "china"), 
+                     prac1_scrape(2016, 941, "russia"), prac1_scrape(2016, 942, "spain"), prac1_scrape(2016, 943, "monaco"),
+                     prac1_scrape(2016, 944, "canada"), prac1_scrape(2016, 958, "europe"), prac1_scrape(2017,967, "austria"),
+                     prac1_scrape(2016,946, "great_britain"), prac1_scrape(2016,947, "hungary"), prac1_scrape(2016,948, "germany"),
+                     prac1_scrape(2016,949, "belgium"), prac1_scrape(2016,950, "italy"), prac1_scrape(2016,951, "singapore"),
+                     prac1_scrape(2016,952, "malaysia"), prac1_scrape(2016,953, "japan"), prac1_scrape(2016,954, "united-states"),
+                     prac1_scrape(2016,955, "mexico"), prac1_scrape(2016,956, "brazil"), prac1_scrape(2016,957, "abu-dhabi"))
+
+prac115 <- bind_rows(prac1_scrape(2015, 917, "australia"), prac1_scrape(2015, 918, "malaysia"), prac1_scrape(2015, 919, "china"), 
+                     prac1_scrape(2015, 920, "bahrain"), prac1_scrape(2015, 921, "spain"), prac1_scrape(2015, 922, "monaco"),
+                     prac1_scrape(2015, 923, "canada"), prac1_scrape(2015,923, "austria"),
+                     prac1_scrape(2015,925, "great_britain"), prac1_scrape(2015,927, "hungary"), 
+                     prac1_scrape(2015,928, "belgium"), prac1_scrape(2015,929, "italy"), prac1_scrape(2015,930, "singapore"),
+                    prac1_scrape(2015,931, "japan"), prac1_scrape(2015, 932, "russia"), prac1_scrape(2015,933, "united-states"),
+                     prac1_scrape(2015,934, "mexico"), prac1_scrape(2015,935, "brazil"), prac1_scrape(2015,936, "abu-dhabi"))
+
+
+
+
+
+
+prac218 <- bind_rows(prac2_scrape(2018,979, "australia"), prac2_scrape(2018,980, "bahrain"), prac2_scrape(2018,981, "china"), 
+                     prac2_scrape(2018,982, "azerbaijan"), prac2_scrape(2018,983, "spain"), prac2_scrape(2018,984, "monaco"),
+                     prac2_scrape(2018,985, "canada"), prac2_scrape(2018,986, "france"), prac2_scrape(2018,987, "austria"),
+                     prac2_scrape(2018,988, "great_britain"), prac2_scrape(2018,989, "germany"), prac2_scrape(2018,990, "hungary"),
+                     prac2_scrape(2018,991, "belgium"), prac2_scrape(2018,992, "italy"), prac2_scrape(2018,993, "singapore"),
+                     prac2_scrape(2018,994, "russia"), prac2_scrape(2018,995, "japan"), prac2_scrape(2018,996, "united-states"),
+                     prac2_scrape(2018,997, "mexico"), prac2_scrape(2018,998, "brazil"), prac2_scrape(2018,999, "abu-dhabi"))
+
+
+
+
+prac217 <- bind_rows(prac2_scrape(2017, 959, "australia"), prac2_scrape(2017, 960, "china"), prac2_scrape(2017, 961, "bahrain"), 
+                     prac2_scrape(2017, 962, "russia"), prac2_scrape(2017, 963, "spain"), prac2_scrape(2017, 964, "monaco"),
+                     prac2_scrape(2017, 965, "canada"), prac2_scrape(2017, 966, "azerbaijan"), prac2_scrape(2017,967, "austria"),
+                     prac2_scrape(2017,968, "great_britain"), prac2_scrape(2017,969, "hungary"), prac2_scrape(2017,970, "belgium"),
+                     prac2_scrape(2017,971, "italy"), prac2_scrape(2017,972, "singapore"), prac2_scrape(2017,973, "malaysia"),
+                     prac2_scrape(2017,974, "japan"), prac2_scrape(2017,975, "united-states"), prac2_scrape(2017,976, "mexico"),
+                     prac2_scrape(2017,977, "brazil"), prac2_scrape(2017,978, "abu-dhabi"))
+
+
+prac216 <- bind_rows(prac2_scrape(2016, 938, "australia"), prac2_scrape(2016, 939, "bahrain"), prac2_scrape(2016, 940, "china"), 
+                     prac2_scrape(2016, 941, "russia"), prac2_scrape(2016, 942, "spain"), prac2_scrape(2016, 943, "monaco"),
+                     prac2_scrape(2016, 944, "canada"), prac2_scrape(2016, 958, "europe"), prac2_scrape(2017,967, "austria"),
+                     prac2_scrape(2016,946, "great_britain"), prac2_scrape(2016,947, "hungary"), prac2_scrape(2016,948, "germany"),
+                     prac2_scrape(2016,949, "belgium"), prac2_scrape(2016,950, "italy"), prac2_scrape(2016,951, "singapore"),
+                     prac2_scrape(2016,952, "malaysia"), prac2_scrape(2016,953, "japan"), prac2_scrape(2016,954, "united-states"),
+                     prac2_scrape(2016,955, "mexico"), prac2_scrape(2016,956, "brazil"), prac2_scrape(2016,957, "abu-dhabi"))
+
+
+
+prac215 <- bind_rows(prac2_scrape(2015, 917, "australia"), prac2_scrape(2015, 918, "malaysia"), prac2_scrape(2015, 919, "china"), 
+                     prac2_scrape(2015, 920, "bahrain"), prac2_scrape(2015, 921, "spain"), prac2_scrape(2015, 922, "monaco"),
+                     prac2_scrape(2015, 923, "canada"), prac2_scrape(2015,923, "austria"),
+                     prac2_scrape(2015,925, "great_britain"), prac2_scrape(2015,927, "hungary"), 
+                     prac2_scrape(2015,928, "belgium"), prac2_scrape(2015,929, "italy"), prac2_scrape(2015,930, "singapore"),
+                    prac2_scrape(2015,931, "japan"), prac2_scrape(2015, 932, "russia"), prac2_scrape(2015,933, "united-states"),
+                     prac2_scrape(2015,934, "mexico"), prac2_scrape(2015,935, "brazil"), prac2_scrape(2015,936, "abu-dhabi"))
+
+
+
+
+qual118 <- bind_rows(qual_scrape(2018,979, "australia"), qual_scrape(2018,980, "bahrain"), qual_scrape(2018,981, "china"),
+                     qual_scrape(2018,982, "azerbaijan"), qual_scrape(2018,983, "spain"), qual_scrape(2018,984, "monaco"),
+                     qual_scrape(2018,985, "canada"), qual_scrape(2018,986, "france"), qual_scrape(2018,987, "austria"),
+                     qual_scrape(2018,988, "great_britain"), qual_scrape(2018,989, "germany"), qual_scrape(2018,990, "hungary"),
+                     qual_scrape(2018,991, "belgium"), qual_scrape(2018,992, "italy"), qual_scrape(2018,993, "singapore"),
+                     qual_scrape(2018,994, "russia"), qual_scrape(2018,995, "japan"), qual_scrape(2018,996, "united-states"),
+                     qual_scrape(2018,997, "mexico"), qual_scrape(2018,998, "brazil"), qual_scrape(2018,999, "abu-dhabi"))
+
+
+
+
+qual117 <- bind_rows(qual_scrape(2017, 959, "australia"), qual_scrape(2017, 960, "china"), qual_scrape(2017, 961, "bahrain"), 
+                     qual_scrape(2017, 962, "russia"), qual_scrape(2017, 963, "spain"), qual_scrape(2017, 964, "monaco"),
+                     qual_scrape(2017, 965, "canada"), qual_scrape(2017, 966, "azerbaijan"), qual_scrape(2017,967, "austria"),
+                     qual_scrape(2017,968, "great_britain"), qual_scrape(2017,969, "hungary"), qual_scrape(2017,970, "belgium"),
+                     qual_scrape(2017,971, "italy"), qual_scrape(2017,972, "singapore"), qual_scrape(2017,973, "malaysia"),
+                     qual_scrape(2017,974, "japan"), qual_scrape(2017,975, "united-states"), qual_scrape(2017,976, "mexico"),
+                     qual_scrape(2017,977, "brazil"), qual_scrape(2017,978, "abu-dhabi"))
+
+
+qual116 <- bind_rows(qual_scrape(2016, 938, "australia"), qual_scrape(2016, 939, "bahrain"), qual_scrape(2016, 940, "china"), 
+                     qual_scrape(2016, 941, "russia"), qual_scrape(2016, 942, "spain"), qual_scrape(2016, 943, "monaco"),
+                     qual_scrape(2016, 944, "canada"), qual_scrape(2016, 958, "europe"), qual_scrape(2017,967, "austria"),
+                     qual_scrape(2016,946, "great_britain"), qual_scrape(2016,947, "hungary"), qual_scrape(2016,948, "germany"),
+                     qual_scrape(2016,949, "belgium"), qual_scrape(2016,950, "italy"), qual_scrape(2016,951, "singapore"),
+                     qual_scrape(2016,952, "malaysia"), qual_scrape(2016,953, "japan"), qual_scrape(2016,954, "united-states"),
+                     qual_scrape(2016,955, "mexico"), qual_scrape(2016,956, "brazil"), qual_scrape(2016,957, "abu-dhabi"))
+
+
+qual15 <- bind_rows(qual_scrape(2015, 917, "australia"), qual_scrape(2015, 918, "malaysia"), qual_scrape(2015, 919, "china"), 
+                     qual_scrape(2015, 920, "bahrain"), qual_scrape(2015, 921, "spain"), qual_scrape(2015, 922, "monaco"),
+                     qual_scrape(2015, 923, "canada"), qual_scrape(2015,923, "austria"),
+                     qual_scrape(2015,925, "great_britain"), qual_scrape(2015,927, "hungary"), 
+                     qual_scrape(2015,928, "belgium"), qual_scrape(2015,929, "italy"), qual_scrape(2015,930, "singapore"),
+                    qual_scrape(2015,931, "japan"), qual_scrape(2015, 932, "russia"), qual_scrape(2015,933, "united-states"),
+                     qual_scrape(2015,934, "mexico"), qual_scrape(2015,935, "brazil"), qual_scrape(2015,936, "abu-dhabi"))
+
+
+
+
+
+prac119 <-  bind_rows(prac1_scrape(2019,1000, "australia"), prac1_scrape(2019,1001, "bahrain"), prac1_scrape(2019,1002, "china"), 
+                      prac1_scrape(2019,1003, "azerbaijan"), prac1_scrape(2019,1004, "spain"), prac1_scrape(2019,1005, "monaco"),
+                      prac1_scrape(2019,1006, "canada"), prac1_scrape(2019,1007, "france"),prac1_scrape(2019,1008, "austria"),
+                       prac1_scrape(2019,1009, "great_britain"),prac1_scrape(2019,1010, "germany") )
+
+prac219 <- bind_rows(prac2_scrape(2019,1000, "australia"), prac2_scrape(2019,1001, "bahrain"), prac2_scrape(2019,1002, "china"), 
+                     prac2_scrape(2019,1003, "azerbaijan"), prac2_scrape(2019,1004, "spain"), prac2_scrape(2019,1005, "monaco"),
+                     prac2_scrape(2019,1006, "canada"), prac2_scrape(2019,1007, "france"), prac2_scrape(2019,1008, "austria"),
+                     prac2_scrape(2019,1010, "germany"))
+
+qual119 <- bind_rows(qual_scrape(2019,1000, "australia"), qual_scrape(2019,1001, "bahrain"), qual_scrape(2019,1002, "china"),
+                     qual_scrape(2019,1003, "azerbaijan"), qual_scrape(2019,1004, "spain"), qual_scrape(2019,1005, "monaco"),
+                     qual_scrape(2019,1006, "canada"), qual_scrape(2019,1007, "france"),  qual_scrape(2019,1008, "austria"),
+                     qual_scrape(2019,1009, "great_britain"), qual_scrape(2019,1010, "germany"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+qual116b <- qual116 %>% group_by(race1) %>%
+                            mutate(rank = qtime)
+
+
+
+
+dat16  <- prac116 %>%
+                    left_join(prac216, by = c("race1", "No")) %>%
+                      left_join(qual116, by = c("race1", "No") ) %>%
+                        select(-Car.y, -gp.y) %>%
+                          separate(Car.x, c("n1", "n2"), sep = " ") %>%
+                  mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                        if_else(n1 == "Red", "Red Bull", 
+                                if_else(n1 == "Ferrari", "Ferrari", 
+                                        if_else(n1 == "Haas", "Haas", 
+                                                if_else(n1 == "McLaren", "McLaren",
+                                                        if_else(n1 == "Renault", "Renault", 
+                                                                if_else(n1 == "Toro", "Toro Rosso", 
+                                                                        if_else(n1 == "Williams", "Williams",
+                                                                                if_else(n1 == "Force", "Racing Point",
+                                                                                        if_else(n1 == "Sauber", "Alfa Romeo", "other"))))))))))) 
+
+
+
+
+dat17  <- prac117 %>%
+                    left_join(prac217, by = c("race1", "No")) %>%
+                      left_join(qual117, by = c("race1", "No") ) %>%
+                        select(-Car.y, -gp.y) %>%
+                          separate(Car.x, c("n1", "n2"), sep = " ") %>%
+                  mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                        if_else(n1 == "Red", "Red Bull", 
+                                if_else(n1 == "Ferrari", "Ferrari", 
+                                        if_else(n1 == "Haas", "Haas", 
+                                                if_else(n1 == "McLaren", "McLaren",
+                                                        if_else(n1 == "Renault", "Renault", 
+                                                                if_else(n1 == "Toro", "Toro Rosso", 
+                                                                        if_else(n1 == "Williams", "Williams",
+                                                                                if_else(n1 == "Force", "Racing Point",
+                                                                                        if_else(n1 == "Sauber", "Alfa Romeo", "other"))))))))))) 
+
+
+
+dat18  <- prac118 %>%
+                    left_join(prac218, by = c("race1", "No")) %>%
+                      left_join(qual118, by = c("race1", "No") ) %>%
+                        select(-Car.y, -gp.y) %>%
+                          separate(Car.x, c("n1", "n2"), sep = " ") %>%
+                  mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                        if_else(n1 == "Red", "Red Bull", 
+                                if_else(n1 == "Ferrari", "Ferrari", 
+                                        if_else(n1 == "Haas", "Haas", 
+                                                if_else(n1 == "McLaren", "McLaren",
+                                                        if_else(n1 == "Renault", "Renault", 
+                                                                if_else(n1 == "Toro", "Toro Rosso", 
+                                                                        if_else(n1 == "Williams", "Williams",
+                                                                                if_else(n1 == "Force", "Racing Point",
+                                                                                        if_else(n1 == "Sauber", "Alfa Romeo", "other"))))))))))) 
+
+
+
+
+dat19  <- prac119 %>%
+                    left_join(prac219, by = c("race1", "No")) %>%
+                      left_join(qual119, by = c("race1", "No") ) %>%
+                        select(-Car.y, -gp.y) %>%
+                          separate(Car.x, c("n1", "n2"), sep = " ") %>%
+                  mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                        if_else(n1 == "Red", "Red Bull", 
+                                if_else(n1 == "Ferrari", "Ferrari", 
+                                        if_else(n1 == "Haas", "Haas", 
+                                                if_else(n1 == "McLaren", "McLaren",
+                                                        if_else(n1 == "Renault", "Renault", 
+                                                                if_else(n1 == "Toro", "Toro Rosso", 
+                                                                        if_else(n1 == "Williams", "Williams",
+                                                                                if_else(n1 == "Force", "Racing Point",
+                                                                                        if_else(n1 == "Sauber", "Alfa Romeo", "other"))))))))))) 
+
+
+dat15  <- prac115 %>%
+                    left_join(prac215, by = c("race1", "No")) %>%
+                      left_join(qual15, by = c("race1", "No") ) %>%
+                        select(-Car.y, -gp.y) %>%
+                          separate(Car.x, c("n1", "n2"), sep = " ") %>%
+                  mutate(Team = if_else(n1 == "Mercedes", "Mercedes", 
+                        if_else(n1 == "Red", "Red Bull", 
+                                if_else(n1 == "Ferrari", "Ferrari", 
+                                        if_else(n1 == "Haas", "Haas", 
+                                                if_else(n1 == "McLaren", "McLaren",
+                                                        if_else(n1 == "Renault", "Renault", 
+                                                                if_else(n1 == "Toro", "Toro Rosso", 
+                                                                        if_else(n1 == "Williams", "Williams",
+                                                                                if_else(n1 == "Force", "Racing Point",
+                                                                                        if_else(n1 == "Sauber", "Alfa Romeo", "other"))))))))))) 
+
+
+
+
+
+f1_data <- dat16 %>% bind_rows(dat17) %>%
+                            bind_rows(dat18) %>%
+                                bind_rows(dat19) %>%
+                                  bind_rows(dat15) %>%
+                                  select(prac1pos, No, pract1t, pract1l, prac2pos, pract2t, pract2l, qtime, race1) %>%
+                                      drop_na()
+
+
+
+````
+
+
+```{r}
+
+setwd("~/R/F1/grid forecast")
+
+
+drivers <- read_csv("drivers2.csv")
+races <- read_csv("races.csv")
+results <- read_csv("results.csv")
+
+
+```
+
+```{r}
+
+alldat <- results %>%
+                      left_join(races, by = "raceId") %>%
+                            left_join(drivers, by = "driverId") %>%
+                              select(Racno, grid, number.y)
+
+
+colnames(alldat)[3] <- "No"
+colnames(alldat)[1] <- "race1"
+
+```
+
+
+```{r}
+
+
+f1_data_grid <- f1_data %>% left_join(alldat, by = c("race1", "No")) %>%
+                            select(-No, -race1) %>%
+                                filter(!is.na(grid)) 
+
+
+
+
+
+f1_dataa <- f1_data_grid %>%
+                                  mutate(pole = as.factor(if_else(grid == 1, "pole", "not"))) %>%
+                                    mutate(second = as.factor(if_else(grid == 2, "second", "not"))) %>%
+                                       mutate(third = as.factor(if_else(grid == 3, "thrid", "not"))) %>%
+                                    mutate(fourth = as.factor(if_else(grid == 4, "fourth", "not"))) %>%
+                                         mutate(fith = as.factor(if_else(grid == 5, "fifth", "not"))) %>%
+                                    mutate(six = as.factor(if_else(grid == 6, "six", "not"))) %>%
+                                         mutate(sev = as.factor(if_else(grid == 7, "sev", "not"))) %>%
+                                    mutate(eith = as.factor(if_else(grid == 8, "eith", "not"))) %>%
+                                           mutate(ninth = as.factor(if_else(grid == 9, "ninth", "not"))) %>%
+                                    mutate(tenth = as.factor(if_else(grid == 10, "tenth", "not"))) %>%
+                                         mutate(eleth = as.factor(if_else(grid == 11, "eleth", "not"))) %>%
+                                    mutate(twelt = as.factor(if_else(grid == 12, "twelt", "not"))) %>%
+                                           mutate(thirt = as.factor(if_else(grid == 13, "thirt", "not"))) %>%
+                                    mutate(fourt = as.factor(if_else(grid == 14, "fourt", "not"))) %>%
+                                            mutate(fitee = as.factor(if_else(grid == 15, "fitee", "not"))) %>%
+                                           mutate(sixtee = as.factor(if_else(grid == 16, "sixtee", "not"))) %>%
+                                    mutate(sevtee = as.factor(if_else(grid == 17, "sevtee", "not"))) %>%
+                                         mutate(eithee = as.factor(if_else(grid == 18, "eithee", "not"))) %>%
+                                    mutate(nintee = as.factor(if_else(grid == 19, "nintee", "not"))) %>%
+                                           mutate(twentee = as.factor(if_else(grid == 20, "twentee", "not"))) %>%
+                                    select(-grid, -qtime)
+
+
+
+
+
+```
+
+
+
+
+```{r}
+
+
+data_split <- initial_split(f1_data, prop = 0.8)
+
+
+      
+training_f1 <- training(data_split)
+testing_f1 <- testing(data_split)
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+lm_mod <- linear_reg() %>%
+                  set_engine("lm")
+
+
+
+
+f1_fit <- lm_mod %>%
+                  fit(qtime ~ prac1pos + pract1t + pract1l + prac2pos+ pract2t + pract2l, data = training_f1)
+
+
+
+
+
+
+
+
+
+
+
+````
+
+
+
+
+```{r}
+
+tidy(f1_fit)
+
+
+
+
+```
+
+
+
+
+```{r}
+
+
+
+mean_pred <- predict(f1_fit, new_data = testing_f1)
+
+conf_int <-  predict(f1_fit, new_data = testing_f1, type = "conf_int")
+
+
+testing_f12 <- testing_f1 %>%
+                        bind_cols(mean_pred) %>%
+                          bind_cols(conf_int)
+
+````
+
+
+
+```{r}
+
+
+
+ggplot(testing_f12, aes(x =qtime, y = .pred)) + geom_point()
+
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+
+testdat <- prac1_scrape(2019,1008, "austria") %>%
+                   left_join( prac2_scrape(2019,1008, "austria"), by = "No") %>%
+                        left_join( qual_scrape(2019,1008, "austria"), by = "No") %>%
+                              select(-gp.x, -race1.x,-Car.y, -gp.y, -race1.y) 
+
+
+
+```
+
+
+```{r}
+
+
+
+austmean <- predict(f1_fit, new_data = testdat)
+austconf <- predict(f1_fit, new_data = testdat, type = "conf_int")
+
+
+testdat2 <- testdat %>% bind_cols(austmean) %>%
+                              bind_cols(austconf) %>%
+                                mutate(rank = rank(.pred)) %>%
+                                  select(No, Car.x, qtime, .pred, .pred_lower, .pred_upper, rank) %>%
+                                  gather("time", "value", -No, -Car.x, -rank)
+
+
+
+
+```
+
+
+
+
+````{r}
+
+
+ggplot(testdat2, aes(x = rank, y = value, col = time )) + geom_point()
+
+
+
+
+
+````
+
+
+
+
+```{r}
+
+
+testdat2 <- prac1_scrape(2019,1009, "great_britain") %>%
+                   left_join( prac2_scrape(2019,1009, "great_britain"), by = "No") %>%
+                        left_join( qual_scrape(2019,1009, "great_britain"), by = "No") %>%
+                              select(-gp.x, -race1.x,-Car.y, -gp.y, -race1.y) 
+
+
+
+
+
+
+gbmean <- predict(f1_fit, new_data = testdat2)
+gbconf <- predict(f1_fit, new_data = testdat2, type = "conf_int")
+
+
+testdat3 <- testdat2 %>% bind_cols(gbmean) %>%
+                              bind_cols(gbconf) %>%
+                                mutate(rank = rank(.pred)) %>%
+                                  select(No, Car.x, qtime, .pred, .pred_lower, .pred_upper, rank) %>%
+                                  gather("time", "value", -No, -Car.x, -rank)
+
+
+
+ggplot(testdat3, aes(x = rank, y = value, col = time )) + geom_point()
+
+
+
+
+````
+
+
+
+
+```{r}
+
+rf_mod <- rand_forest(mode = "regression") %>%
+                      set_engine("ranger")
+
+
+rf_mod_fit <-rf_mod %>% fit(qtime ~ prac1pos + pract1t + pract1l + prac2pos+ pract2t + pract2l, data = training_f1)
+
+
+rf_mod_fit
+
+```
+
+
+```{r}
+
+
+austmeanrf <- predict(rf_mod_fit, new_data = testdat)
+
+
+
+testdatrf <- testdat %>% bind_cols(austmeanrf) %>%
+                                mutate(rank = rank(.pred)) %>%
+                                  select(No, Car.x, qtime, .pred,rank) %>%
+                                  gather("time", "value", -No, -Car.x, -rank)
+
+
+
+
+```
+
+
+
+
+````{r}
+
+
+ggplot(testdat2, aes(x = rank, y = value, col = time )) + geom_point()
+
+
+
+
+
+````
+
+
+
+
+```{r}
+
+mod_res <- f1_fit %>% predict(new_data = testing_f1) %>%
+                          mutate(truth = testing_f1$qtime, model = "lm") %>%
+                            bind_rows(rf_mod_fit %>% predict(new_data = testing_f1) %>%
+                          mutate(truth = testing_f1$qtime, model = "rf"))
+                  
+
+
+mod_res %>% group_by(model) %>%
+                    rmse(truth = truth, estimate = .pred)
+
+
+
+
+
+```
+
+
+
+
+
+```{r}
+
+
+
+ggplot(mod_res, aes(x = truth, y = .pred, col = model)) + geom_point()
+ 
+
+```
+
+
+```{r}
+
+
+
+
+f1_data_grid1 <- f1_data_grid %>% select(-qtime)  %>%
+                                      filter(grid >0) %>%
+                                        filter(grid < 21)
+
+f1_data_grid1$grid <- as.factor(as.numeric(f1_data_grid1$grid))
+
+```
+
+
+
+
+```{r}
+
+split4 <- initial_split(f1_data_grid1, prop = 0.8) #to set the parameters for the the split should occurr
+
+
+grid_train1 <- training(split4) # creating the training set
+
+gid_test1 <- testing(split4) #creating the test set
+
+
+```
+
+
+
+
+```{r}
+
+rand1 <- rand_forest() %>% # what typpe of model do i want to fit 
+                set_engine("ranger") %>% # the engine used to fit the model. For randomm forest rf is a another one
+                  set_mode("classification") %>% # the  mode for the model as random forest can do both classification and regression 
+                  fit(grid ~., data = grid_train1) # the function to fit the model
+
+
+
+```
+
+
+```{r}
+
+
+test_preds1 <- predict(rand1, new_data = gid_test1)
+test_preds <- predict(rand1, new_data = gid_test1, type = "prob")
+
+
+ex <- gid_test1 %>%
+            bind_cols(test_preds1) %>%
+              bind_cols(test_preds) 
+
+
+
+
+plotdat2 <- ex %>%
+  
+  roc_curve(grid, .pred_1:.pred_20) 
+
+
+plotdat2$.level <- as.numeric(as.character(plotdat2$.level))
+
+ggplot(plotdat2, aes(x = 1- specificity, y = sensitivity)) + 
+                                                            geom_line(col = "#4b005e", size = 2) +
+                                                               geom_abline(
+    lty = 2, alpha = 0.5,
+    color = "grey",
+    size = 1.2
+  ) +
+    labs(title = "Position Roc Curves") +
+    facet_wrap(~.level) +
+  theme_minimal()
+```
+
+
+
+
+```{r}
+
+x <- predict(rand1, new_data = f1_data_2, type = "prob")
+
+f1_data_3 <- f1_data_2 %>%
+                        bind_cols(x)
+
+
+```
+
+
+
+
+
+```{r}
+
+
+
+
+tune_spec <- rand_forest(mtry = tune(), trees = tune(), min_n = tune()) %>% #instructing the model to specfically try numerous values of the hyperprametrs 
+                    set_mode("classification") %>%
+                        set_engine("ranger")
+
+
+init_recep <- recipe(grid ~ ., grid_train1)  #the recipe for fitting the model 
+
+
+tune_wf <- workflow() %>%
+                    add_recipe(init_recep) %>%  # putting together the tune spec and fitting formula 
+                      add_model(tune_spec)
+
+
+wincv <- vfold_cv(grid_train1, v = 2, repeats = 2) #creating a cross validation step
+
+
+tune1 <- tune_grid(tune_wf, resamples = wincv, grid = 50) # using tune to fit it all togehter and test the model across different hyperparameters
+
+
+
+```
+
+
+```{r}
+
+
+results <-  tune1 %>%
+            collect_metrics() %>%
+              filter(.metric == "roc_auc") %>%
+                select(-.metric, -.estimator, -n, -std_err) %>%
+                pivot_longer(cols = 1:3, names_to = "hyper", values_to = "val")
+
+
+cols <- c("min_n" =  "#4b005e", "mtry" = "#008c7e", "trees" = "#c48600")
+
+ggplot(results, aes(x = val, y = mean, col = hyper)) + geom_point( size = 3) + 
+                                  facet_wrap(~hyper, scales = "free_x") +
+                                      scale_colour_manual(values = cols) +
+                                      theme(panel.background = element_rect(fill = "#e3e3e3"), panel.grid.major =  element_line(colour = "#707070"), 
+                                            panel.grid.minor = element_blank())
+
+
+
+
+```
+
+
+```{r}
+
+
+
+
+tune_spec2 <- rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>% #i set trees as 1000 in this run a
+                    set_mode("classification") %>%
+                        set_engine("ranger")
+
+
+init_recep <- recipe(grid ~ ., grid_train1)  
+
+tune_wf <- workflow() %>%
+                    add_recipe(init_recep) %>%  
+                      add_model(tune_spec2)
+
+
+rf_grid <- grid_regular(
+  min_n(range = c(30, 500)),
+  mtry(range = c(1,6)),                        # creating the grid for the two hyperparameters
+  levels = 10
+)
+
+
+
+regular_res <- tune_grid(
+  tune_wf,
+  resamples = wincv,
+  grid = rf_grid
+)
+
+
+
+
+```
+
+
+```{r}
+
+cols <- c("1" = "#4b005e", "2" = "#008c7e", "3" = "#c48600", "4" = "#34aeeb","5" = "#2300a3", "6" = "#eb4934")
+
+
+ regular_res %>%
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(mtry = factor(mtry)) %>%
+  ggplot(aes(min_n, mean, color = mtry)) +
+  geom_line(alpha = 0.5, size = 1.5) +
+  geom_point() +
+   scale_colour_manual(values = cols) +
+  labs(y = "AUC") +
+    theme(panel.background = element_rect(fill = "#e3e3e3"), panel.grid.major =  element_line(colour = "#707070"), 
+                                            panel.grid.minor = element_blank())
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+set.seed(1456)
+
+rand2 <- rand_forest(mtry = 5, trees = 1000, min_n = 265) %>%
+                set_engine("ranger") %>%
+                  set_mode("classification") %>%
+                  fit(grid ~., data = grid_train1)
+
+
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+
+test_preds1 <- predict(rand2, new_data = gid_test1)
+test_preds <- predict(rand2, new_data = gid_test1, type = "prob")
+
+
+ex <- gid_test1 %>%
+            bind_cols(test_preds1) %>%
+              bind_cols(test_preds) 
+
+
+
+
+plotdat <- ex %>%
+  
+  roc_curve(grid, .pred_1:.pred_20)  %>%
+    mutate(mod = "tuned")
+
+
+plotdat3 <- plotdat2 %>% mutate(mod = "firstmod") 
+
+
+plotdat$.level <- as.numeric(as.character(plotdat$.level))
+plotdat3$.level <- as.numeric(as.character(plotdat3$.level))
+
+
+plotdats <- plotdat %>% bind_rows(plotdat3)
+
+
+cols2 <- c("firstmod" = "#4b005e", "tuned" = "#008c7e")
+
+ggplot(plotdats, aes(x = 1- specificity, y = sensitivity, col = mod)) + 
+                                                            geom_line(size = 2) +
+                                                               geom_abline(
+    lty = 2, alpha = 0.5,
+    color = "grey",
+    size = 1
+  ) +
+    labs(title = "Position Roc Curves") +
+    facet_wrap(~.level) +
+  scale_color_manual(values = cols2) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+
+qualbelg <- qual_scrape(2019,1012, "belgium")
+
+belg1 <- prac1_scrape(2019,1012, "belgium")
+
+belg1 <- belg1 %>% mutate(No2 = if_else(No == 40, as.integer(63), No)) %>%
+                        select(-No)
+
+
+colnames(belg1)[8] <- "No"
+
+
+
+belg2 <- prac2_scrape(2019,1012, "belgium")
+
+
+
+```
+
+
+
+
+```{r}
+
+belggp <- belg1 %>% left_join(belg2, by = "No") %>%
+                        filter(!is.na(prac2pos))
+
+
+preds <- predict(rand2, new_data = belggp, type = "prob")
+
+
+qualfor <- belg1 %>% bind_cols(preds)
+
+
+```
+
+
+
+```{r}
+
+qualpred <- qualfor %>% select(Car, No, .pred_1:.pred_20) %>%
+                            gather("pred", "value", -Car, -No) %>%
+                                separate(pred, c("pre", "Pos"), "_") %>%
+                                  filter(value > 0.01)
+    
+
+
+qualpred$Pos <- as.numeric(as.character(qualpred$Pos))
+qualpred$No <- as.factor(as.integer(qualpred$No))
+
+ggplot(qualpred, aes(x = No, y = Pos, size = value, col = value)) + 
+                                                              geom_point() +
+                                                                scale_y_continuous(trans = "reverse")
+
+
+```
+
+
+
+
+```{r}
+
+
+
+
+aust1 <- prac1_scrape(2020,1045, "austria")
+
+
+aust2 <- prac2_scrape(2020,1045, "austria")
+
+
+
+```
+
+
+
+
+```{r}
+
+ausgp <- aust1 %>% left_join(aust2, by = "No") %>%
+                        filter(!is.na(prac2pos))
+
+
+preds <- predict(rand1, new_data = ausgp, type = "prob")
+predspos <- predict(rand1, new_data = ausgp)
+
+
+qualfor <- aust1 %>% bind_cols(preds) %>%
+                      bind_cols(predspos)
+
+
+```
+
+
+
+```{r}
+
+qualpred <- qualfor %>% select(Car, No, .pred_1:.pred_20) %>%
+                            gather("pred", "value", -Car, -No) %>%
+                                separate(pred, c("pre", "Pos"), "_")
+
+
+qualpred$Pos <- as.numeric(as.character(qualpred$Pos))
+qualpred$No <- as.factor(as.integer(qualpred$No))
+
+ggplot(qualpred, aes(x = No, y = Pos, size = value, col = value)) + 
+                                                              geom_point() +
+                                                                scale_y_continuous(trans = "reverse")
+
+
+```
+
+```{r}
+
+colnames(qualpred)[2] <- "number"
+
+
+qualpred2 <- qualpred %>% left_join(drivers, by = "number") %>%
+                            select(Car, number, Pos, value, code) %>%
+                                  mutate(val100 = round(value *100,0))
+
+qualpred3 <- qualpred2 %>%
+                          group_by(code) %>%
+                              filter(value == max(value))
+
+
+x <- uncount(qualpred2, val100)
+
+x$Pos <- as.integer(as.character(x$Pos))
+qualpred3$Pos <- as.integer(as.character(qualpred3$Pos))
+
+
+x2 <- x %>% group_by(code) %>%
+                    summarise(meanpos = mean(Pos))
+
+x3 <- x %>% left_join(x2, by = "code")
+
+ggplot(x3, aes(x = reorder(code,meanpos), y = Pos)) + geom_boxplot(col = "white", fill = "grey") + 
+            geom_point(data = qualpred3, aes(x = code, y = Pos), col = "orange", size = 5) +
+  theme(panel.background = element_blank())
+
+
+````
+
+
+
+```{r}
+
+
+
+
+aust1 <- prac1_scrape(2020,1046, "austria")
+
+
+aust2 <- prac2_scrape(2020,1046, "austria")
+
+
+
+```
+
+
+
+
+```{r}
+
+aust1 <- aust1 %>% mutate(No2 = if_else(No == 40, 63, 
+                                        if_else(No == 88, 99, as.double(No)),as.double(No))) %>%
+                            select(-No)
+
+colnames(aust1)[8] <- "No"
+
+ausgp <- aust1 %>% left_join(aust2, by = "No") %>%
+                        filter(!is.na(prac2pos)) %>%
+                        replace_na(list(pract1t = 69.7, pract1d = 4.8, pract2t = 66.2, pract2d = 2.5))
+
+
+preds <- predict(rand1, new_data = ausgp, type = "prob")
+predspos <- predict(rand1, new_data = ausgp)
+
+
+qualfor <- aust1 %>% bind_cols(preds) %>%
+                      bind_cols(predspos)
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+colnames(qualpred)[2] <- "number"
+
+qualpred$number <- as.numeric(as.character(qualpred$number))
+
+
+qualpred2 <- qualpred %>% left_join(drivers, by = "number") %>%
+                            select(Car, number, Pos, value, code) %>%
+                                  mutate(val100 = round(value *100,0))
+
+qualpred3 <- qualpred2 %>%
+                          group_by(code) %>%
+                              filter(value == max(value))
+
+
+x <- uncount(qualpred2, val100)
+
+x$Pos <- as.integer(as.character(x$Pos))
+qualpred3$Pos <- as.integer(as.character(qualpred3$Pos))
+
+
+x2 <- x %>% group_by(code) %>%
+                    summarise(meanpos = mean(Pos))
+
+x3 <- x %>% left_join(x2, by = "code")
+
+```
+
+
+
+```{r}
+
+
+ggplot(x3, aes(x = reorder(code,meanpos), y = Pos)) + geom_boxplot(col = "white", fill = "#8f8f8f") + 
+            geom_point(data = qualpred3, aes(x = code, y = Pos, col = value), size = 5) +
+                labs(x = "Driver", y = "Position" , title = "Styrian GP Forecast Qualifying Positions") +
+                  scale_color_gradient(low = "#34eb6e", high = "#8334eb") +
+                    guides(colour = guide_colorbar(title = "Chance of Qualifying \nPosition")) +
+                    theme(panel.background = element_blank(), legend.position = c(0.9,0.25)) +
+                    annotate("segment", x = 5, y = 7, xend = 4, yend = 12, col = "grey") +
+                    annotate("text", x = 4, y = 13, label = "Expected Qualifying Range", col = "black")
+
+
+````
+
+
+
+```{r}
+
+aus1 <- prac2_scrape(2020,1045, "austria")
+
+aus2 <- prac2_scrape(2020,1046, "austria")
+
+
+
+aus1_a <- 
+
+
+
+
+
+```
+
+
+
+```{r}
+
+hung1 <- prac1_scrape(2020,1047, "hungary")
+
+hung2 <- prac1_scrape(2020,1047, "hungary")
+
+
+hunggp <- hung1 %>% left_join(hung2, by = "No") %>%
+                        filter(!is.na(prac2pos)) 
+
+
+preds <- predict(rand2, new_data = hunggp, type = "prob")
+predspos <- predict(rand1, new_data = hunggp)
+
+
+qualfor <- hung1 %>% bind_cols(preds) %>%
+                      bind_cols(predspos)
+
+
+````
+
+
+```{r}
+
+
+
+colnames(qualpred)[2] <- "number"
+
+qualpred$number <- as.numeric(as.character(qualpred$number))
+
+
+qualpred2 <- qualpred %>% left_join(drivers, by = "number") %>%
+                            select(Car, number, Pos, value, code) %>%
+                                  mutate(val100 = round(value *100,0))
+
+qualpred3 <- qualpred2 %>%
+                          group_by(code) %>%
+                              filter(value == max(value))
+
+
+x <- uncount(qualpred2, val100)
+
+x$Pos <- as.integer(as.character(x$Pos))
+qualpred3$Pos <- as.integer(as.character(qualpred3$Pos))
+
+
+x2 <- x %>% group_by(code) %>%
+                    summarise(meanpos = mean(Pos))
+
+x3 <- x %>% left_join(x2, by = "code")
+
+
+
+```
+
+
+
+
+```{r}
+
+
+ggplot(x3, aes(x = reorder(code,meanpos), y = Pos)) + geom_boxplot(col = "white", fill = "black") + 
+            geom_point(data = qualpred3, aes(x = code, y = Pos, col = value), size = 5) +
+                labs(x = "Driver", y = "Position" , title = "Hungarian GP Forecast Qualifying Positions") +
+                  scale_color_gradient(low = "#ffc014", high = "#14b9ff") +
+                    guides(colour = guide_colorbar(title = "Chance of Qualifying \nPosition")) +
+                    theme(panel.background = element_blank(), legend.position = c(0.9,0.25)) +
+                    annotate("segment", x = 5, y = 7, xend = 4, yend = 12, col = "grey") +
+                    annotate("text", x = 4, y = 13, label = "Expected Qualifying Range", col = "grey")
+
+
+````
